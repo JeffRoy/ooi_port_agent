@@ -48,7 +48,8 @@ import re
 
 from agents import TcpPortAgent
 from common import MAX_RECONNECT_DELAY
-
+from packet import Packet
+from common import PacketType
 
 PORT = 21
 RETRY = 3                       # Seconds
@@ -225,6 +226,11 @@ class FTPClientProtocol(FTPClient):
             self.factory.retrieved_file_queue.append(os.path.basename(new_filename).split('_')[-1])
 
             log.msg('File downloaded: %s (%s bytes)' % (new_filename, filesize))
+
+            # Send a message to the driver indicating that a new image has been retrieved
+            # The driver will then associate metadata with the image file name
+            packets = Packet.create('downloaded file:' + str(new_filename), PacketType.FROM_INSTRUMENT)
+            self.router.got_data(packets)
 
     def _retrieve_files_errback(self, fail_msg, filename):
         log.msg('Error retrieving file from %s share:' % self._refdes)
